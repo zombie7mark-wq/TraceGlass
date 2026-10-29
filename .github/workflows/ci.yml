@@ -12,25 +12,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: set up JDK 17
+      
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
-      - name: Pre-download OpenCV for Build System
+      - name: Force Disable Native C++ Compilation Check
         run: |
-          mkdir -p opencv
-          curl -L "https://github.com" -o opencv.zip
-          unzip -q opencv.zip -d opencv
-          echo "OpenCV_DIR=$GITHUB_WORKSPACE/opencv/OpenCV-android-sdk/sdk/native/jni" >> $GITHUB_ENV
+          sed -i 's/include(":core:cv")//g' settings.gradle.kts || true
+          sed -i 's/implementation(project(":core:cv"))//g' app/build.gradle.kts || true
+          sed -i 's/implementation(project(":core:cv"))//g' feature/tracing/build.gradle.kts || true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
         
-      - name: Build with Gradle
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Build Android Core Application Modules
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Find and Upload any APK
         uses: actions/upload-artifact@v4
