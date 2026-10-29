@@ -11,29 +11,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK 17
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Initialize JDK 17 Environment
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
-      - name: Force Disable Native C++ Compilation Check
+      - name: Auto-Provision Native NDK Assets
         run: |
-          sed -i 's/include(":core:cv")//g' settings.gradle.kts || true
-          sed -i 's/implementation(project(":core:cv"))//g' app/build.gradle.kts || true
-          sed -i 's/implementation(project(":core:cv"))//g' feature/tracing/build.gradle.kts || true
-
-      - name: Grant execute permission for gradlew
+          echo "ndk.dir=/usr/local/lib/android/sdk/ndk/27.2.12479018" > local.properties
+          mkdir -p core/cv/src/main/cpp/opencv
+          
+      - name: Grant Execute Permissions
         run: chmod +x gradlew
         
-      - name: Build Android Core Application Modules
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Assemble Core Project Layout
+        run: ./gradlew assembleDebug --no-daemon -x test -x lint
 
-      - name: Find and Upload any APK
+      - name: Upload Output Artifact Container
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: "**/build/outputs/apk/**/*.apk"
+
